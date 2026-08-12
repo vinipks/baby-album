@@ -96,7 +96,7 @@ def add_family_member(name: str, access_code: str, is_admin: bool = False) -> di
     with get_conn() as conn:
         cur = conn.execute(
             "INSERT INTO family_members (name, access_code, is_admin) VALUES (?, ?, ?)",
-            (name, name, 1 if is_admin else 0),
+            (name, access_code, 1 if is_admin else 0),
         )
         return {"id": cur.lastrowid, "name": name, "is_admin": is_admin}
 
