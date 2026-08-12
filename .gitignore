@@ -1,9 +1,10 @@
 __pycache__/
 *.pyc
 *.db
+*.db-shm
+*.db-wal
 static/uploads/*
 !static/uploads/.gitkeep
 .env
-.venv*.db
-*.db-shm
-*.db-wal
+.venv/
+.venv
