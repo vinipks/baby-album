@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Baby Album</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👶</text></svg>">
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <header class="app-header" id="appHeader" style="display:none;">
+    <h1 id="headerTitle">Baby Album</h1>
+    <div class="subtitle" id="headerSubtitle"></div>
+    <div class="header-actions">
+      <button class="header-btn" id="btnMembers" title="Family Members" onclick="showMembers()">👨‍👩‍👧</button>
+      <button class="header-btn" id="btnLogout" title="Logout" onclick="logout()">🚪</button>
+    </div>
+  </header>
+
+  <!-- ── Setup Page ──────────────────────────────────────────────── -->
+  <div class="setup-page" id="setupPage">
+    <div class="logo">👶</div>
+    <h2>Welcome to Baby Album!</h2>
+    <p>Set up your baby's profile to get started</p>
+    <div style="max-width:400px;margin:0 auto;">
+      <div class="form-group">
+        <label for="babyName">Baby's Name</label>
+        <input class="form-input" id="babyName" type="text" placeholder="e.g. Sofia" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="birthDate">Birth Date</label>
+        <input class="form-input" id="birthDate" type="date">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveSetup()">Start the Album ✨</button>
+    </div>
+  </div>
+
+  <!-- ── Login Page ──────────────────────────────────────────────── -->
+  <div class="login-page" id="loginPage">
+    <div class="logo">👶</div>
+    <h2 id="loginTitle">Baby Album</h2>
+    <p>Enter your access code to see the photos</p>
+    <div style="max-width:360px;margin:0 auto;">
+      <div class="form-group">
+        <input class="form-input" id="accessCode" type="password" placeholder="Your access code" autocomplete="off" onkeydown="if(event.key==='Enter') login()">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="login()">View Photos 💕</button>
+    </div>
+  </div>
+
+  <!-- ── Main App ────────────────────────────────────────────────── -->
+  <div class="app-container" id="appContainer" style="display:none;">
+
+    <!-- Timeline -->
+    <div id="timeline"></div>
+    <div id="loadingMore" class="loading" style="display:none;">
+      <div class="spinner"></div>
+      Loading more photos...
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <div class="icon">📸</div>
+      <h3>No photos yet</h3>
+      <p>Upload your first photo to start the timeline!</p>
+    </div>
+
+    <!-- Upload FAB (admin only) -->
+    <button class="fab" id="fabUpload" onclick="openUploadModal()" title="Upload Photo">+</button>
+
+    <!-- Scroll to top -->
+    <button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Scroll to top">↑</button>
+  </div>
+
+  <!-- ── Upload Modal ────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="uploadModal">
+    <div class="modal" style="position:relative;">
+      <button class="modal-close" onclick="closeUploadModal()">✕</button>
+      <h2>📸 Upload Photo</h2>
+      <div class="form-group">
+        <label>Choose a photo</label>
+        <div class="file-input-wrapper">
+          <input class="form-input" type="file" id="photoFile" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewPhoto()">
+        </div>
+        <img class="preview-img" id="photoPreview">
+      </div>
+      <div class="form-group">
+        <label for="photoCaption">Caption (optional)</label>
+        <input class="form-input" id="photoCaption" type="text" placeholder="What's happening in this photo?" autocomplete="off">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="uploadPhoto()">Upload ✨</button>
+    </div>
+  </div>
+
+  <!-- ── Members Modal ───────────────────────────────────────────── -->
+  <div class="modal-overlay" id="membersModal">
+    <div class="modal" style="position:relative;">
+      <button class="modal-close" onclick="closeMembersModal()">✕</button>
+      <h2>👨‍👩‍👧 Family Members</h2>
+      <div id="membersList"></div>
+      <hr style="border:none;border-top:1px solid var(--pink-light);margin:16px 0;">
+      <h3 style="font-size:1rem;margin-bottom:12px;">Add a new member</h3>
+      <div class="form-group">
+        <label for="newMemberName">Name</label>
+        <input class="form-input" id="newMemberName" type="text" placeholder="e.g. Grandma" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="newMemberCode">Access Code</label>
+        <input class="form-input" id="newMemberCode" type="text" placeholder="e.g. grandma2024" autocomplete="off">
+      </div>
+      <button class="btn btn-primary btn-block btn-sm" onclick="addMember()">Add Member +</button>
+    </div>
+  </div>
+
+  <!-- ── Toast ───────────────────────────────────────────────────── -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
