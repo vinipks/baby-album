@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: baby-album
+    runtime: python
+    repo: https://github.com/vinipks/baby-album
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    healthCheckPath: /api/settings
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
