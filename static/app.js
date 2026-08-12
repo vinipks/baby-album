@@ -1,7 +1,7 @@
 /* ── Baby Album — App Logic ────────────────────────────────────────── */
 
 let STATE = {
-  member: null,           // {id, name, is_admin} or null
+  member: null,
   babyName: 'Baby Album',
   babyBirthDate: null,
   page: 1,
@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Check if logged in
   const stored = sessionStorage.getItem('baby_album_member');
   if (stored) {
     STATE.member = JSON.parse(stored);
@@ -41,6 +40,7 @@ function showSetup() {
   document.getElementById('loginPage').classList.remove('active');
   document.getElementById('appContainer').style.display = 'none';
   document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('bottomNav').style.display = 'none';
 }
 
 function showLogin() {
@@ -50,6 +50,7 @@ function showLogin() {
   document.getElementById('loginPage').classList.add('active');
   document.getElementById('appContainer').style.display = 'none';
   document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('bottomNav').style.display = 'none';
 }
 
 function showApp() {
@@ -57,16 +58,48 @@ function showApp() {
   document.getElementById('loginPage').classList.remove('active');
   document.getElementById('appContainer').style.display = 'block';
   document.getElementById('appHeader').style.display = 'block';
+  document.getElementById('bottomNav').style.display = 'flex';
 
-  const title = STATE.babyName || 'Baby Album';
-  document.getElementById('headerTitle').textContent = `🩷 ${title}`;
-  document.getElementById('headerSubtitle').textContent = `Welcome, ${STATE.member.name}`;
+  const name = STATE.member.name;
+  document.getElementById('greetingName').textContent = name;
+  document.getElementById('headerBabyName').textContent = STATE.babyName || 'Baby';
+
+  updateBabyAge();
 
   // Show/hide admin features
-  document.getElementById('fabUpload').style.display = STATE.member.is_admin ? 'flex' : 'none';
+  document.getElementById('navUploadBtn').style.display = STATE.member.is_admin ? 'block' : 'none';
   document.getElementById('btnMembers').style.display = STATE.member.is_admin ? 'inline-block' : 'none';
 
   loadPhotos(true);
+}
+
+function updateBabyAge() {
+  const pill = document.getElementById('headerBabyAge');
+  if (!STATE.babyBirthDate) { pill.textContent = ''; return; }
+
+  const birth = new Date(STATE.babyBirthDate);
+  const now = new Date();
+  const totalDays = Math.floor((now - birth) / (1000 * 60 * 60 * 24));
+
+  if (totalDays < 0) { pill.textContent = ''; return; }
+
+  const months = Math.floor(totalDays / 30);
+  const weeks = Math.floor((totalDays % 30) / 7);
+  const days = totalDays % 7;
+
+  const parts = [];
+  if (months > 0) parts.push(`${months}m`);
+  if (weeks > 0 || months > 0) parts.push(`${weeks}w`);
+  parts.push(`${days}d`);
+  pill.textContent = parts.join(' ');
+}
+
+// ── Tab Switching ────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  document.querySelectorAll('.nav-item[data-tab]').forEach(el => el.classList.remove('active'));
+  const btn = document.querySelector(`.nav-item[data-tab="${tab}"]`);
+  if (btn) btn.classList.add('active');
 }
 
 // ── Setup ────────────────────────────────────────────────────────────
@@ -169,19 +202,19 @@ async function loadPhotos(reset = false) {
 
 function createPhotoCard(photo) {
   const card = document.createElement('div');
-  card.className = 'card photo-card';
+  card.className = 'photo-card';
   card.id = `photo-${photo.id}`;
 
   const ageHtml = photo.age
     ? `<span class="photo-age">${photo.age}</span>`
     : '';
 
-  // Build reactions html
+  // Build reactions pills
   let reactionsHtml = '';
   if (photo.reactions && photo.reactions.length > 0) {
     reactionsHtml = photo.reactions.map(r =>
-      `<button class="reaction-btn active" onclick="toggleReaction(${photo.id}, '${r.emoji}')">
-        ${r.emoji} <span class="count">${r.count}</span>
+      `<button class="reaction-chip" onclick="toggleReaction(${photo.id}, '${r.emoji}')">
+        ${r.emoji}<span class="count">${r.count}</span>
       </button>`
     ).join('');
   }
@@ -189,7 +222,7 @@ function createPhotoCard(photo) {
   // Quick reaction buttons
   const quickEmojis = ['❤️', '😊', '👶', '💕', '🎉'];
   const quickReactionsHtml = quickEmojis.map(e =>
-    `<button class="quick-reaction-btn" onclick="toggleReaction(${photo.id}, '${e}')">${e}</button>`
+    `<button class="quick-react-btn" onclick="toggleReaction(${photo.id}, '${e}')">${e}</button>`
   ).join('');
 
   card.innerHTML = `
@@ -201,12 +234,10 @@ function createPhotoCard(photo) {
       </div>
       ${photo.caption ? `<div class="photo-caption">${escapeHtml(photo.caption)}</div>` : ''}
     </div>
-    <div class="reactions-bar" id="reactions-${photo.id}">
-      ${reactionsHtml}
+    <div class="reactions-section">
+      <div class="reaction-chips" id="reactions-${photo.id}">${reactionsHtml}</div>
     </div>
-    <div class="quick-reactions">
-      ${quickReactionsHtml}
-    </div>
+    <div class="quick-reactions">${quickReactionsHtml}</div>
   `;
 
   return card;
@@ -229,14 +260,10 @@ async function toggleReaction(photoId, emoji) {
   if (!res.ok) return;
 
   const data = await res.json();
-
-  // Refresh the reactions display for this photo
   const photoRes = await fetch(`/api/photos?page=1&per_page=1000`);
   const allData = await photoRes.json();
   const photo = allData.photos.find(p => p.id === photoId);
-  if (photo) {
-    updateReactionsBar(photoId, photo.reactions);
-  }
+  if (photo) updateReactionsBar(photoId, photo.reactions);
 }
 
 function updateReactionsBar(photoId, reactions) {
@@ -245,8 +272,8 @@ function updateReactionsBar(photoId, reactions) {
 
   if (reactions && reactions.length > 0) {
     bar.innerHTML = reactions.map(r =>
-      `<button class="reaction-btn active" onclick="toggleReaction(${photoId}, '${r.emoji}')">
-        ${r.emoji} <span class="count">${r.count}</span>
+      `<button class="reaction-chip" onclick="toggleReaction(${photoId}, '${r.emoji}')">
+        ${r.emoji}<span class="count">${r.count}</span>
       </button>`
     ).join('');
   } else {
@@ -261,6 +288,7 @@ function openUploadModal() {
   document.getElementById('photoFile').value = '';
   document.getElementById('photoCaption').value = '';
   document.getElementById('photoPreview').classList.remove('show');
+  document.getElementById('photoPreview').src = '';
 }
 
 function closeUploadModal() {
@@ -294,8 +322,6 @@ async function uploadPhoto() {
 
   toast('Photo uploaded! 🎉');
   closeUploadModal();
-
-  // Reload timeline from the beginning
   loadPhotos(true);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -304,11 +330,13 @@ async function uploadPhoto() {
 
 async function showMembers() {
   document.getElementById('membersModal').classList.add('active');
+  switchTab('family');
   await refreshMembersList();
 }
 
 function closeMembersModal() {
   document.getElementById('membersModal').classList.remove('active');
+  switchTab('home');
 }
 
 async function refreshMembersList() {
@@ -355,15 +383,13 @@ async function addMember() {
 
 let scrollTimeout = null;
 window.addEventListener('scroll', () => {
-  // Scroll to top button
-  const scrollTop = document.getElementById('scrollTop');
+  const scrollTopBtn = document.getElementById('scrollTop');
   if (window.scrollY > 600) {
-    scrollTop.classList.add('show');
+    scrollTopBtn.classList.add('show');
   } else {
-    scrollTop.classList.remove('show');
+    scrollTopBtn.classList.remove('show');
   }
 
-  // Infinite scroll
   if (scrollTimeout) clearTimeout(scrollTimeout);
   scrollTimeout = setTimeout(() => {
     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -373,7 +399,7 @@ window.addEventListener('scroll', () => {
   }, 200);
 });
 
-// ── Photo lightbox ───────────────────────────────────────────────────
+// ── Photo Lightbox ───────────────────────────────────────────────────
 
 function openPhoto(photoId) {
   const img = document.querySelector(`#photo-${photoId} img`);
@@ -389,7 +415,7 @@ function openPhoto(photoId) {
   const enlarged = document.createElement('img');
   enlarged.src = img.src;
   enlarged.style.cssText = `
-    max-width: 100%; max-height: 90vh; border-radius: 12px;
+    max-width: 100%; max-height: 90vh; border-radius: 14px;
     object-fit: contain; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   `;
 
