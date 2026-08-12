@@ -4,4 +4,6 @@ __pycache__/
 static/uploads/*
 !static/uploads/.gitkeep
 .env
-.venv
+.venv*.db
+*.db-shm
+*.db-wal
